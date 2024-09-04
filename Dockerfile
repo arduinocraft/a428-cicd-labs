@@ -8,7 +8,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM node:18-slim
+FROM node:14-slim
 
 WORKDIR /app
 RUN npm install -g serve
