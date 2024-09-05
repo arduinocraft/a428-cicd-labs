@@ -32,8 +32,15 @@ node {
             ]) {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh '''
-                    input message: 'Lanjutkan ke tahap Deploy? (Click "Proceed" to continue)'
                     docker build -t $IMAGE_NAME .
+                    CONTAINER_ID=$(docker run -d -p 3000:3000 $IMAGE_NAME)
+                    # Menjeda pipeline selama 1 menit
+                    sleep 60
+                    docker stop $CONTAINER_ID
+                    docker rm $CONTAINER_ID
+                    
+                    # Konfirmasi manual approval
+                    input message: 'Lanjutkan ke tahap Deploy? (Click "Proceed" to continue)'
                     echo $PASSWORD | docker login ghcr.io -u $USERNAME --password-stdin
                     docker push $IMAGE_NAME
                     '''
