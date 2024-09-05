@@ -37,9 +37,11 @@ node {
                     sleep 60
                     docker stop $CONTAINER_ID
                     docker rm $CONTAINER_ID
-                    
-                    # Konfirmasi manual approval
+                    '''
+
                     input message: 'Lanjutkan ke tahap Deploy? (Click "Proceed" to continue)'
+
+                    sh '''
                     echo $PASSWORD | docker login ghcr.io -u $USERNAME --password-stdin
                     docker push $IMAGE_NAME
                     '''
