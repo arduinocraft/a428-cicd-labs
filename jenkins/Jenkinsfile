@@ -27,7 +27,6 @@ node {
             // Kredensial Github (username dan token PAT) untuk GHCR menggunkan Jenkins variable
             withEnv([
                 "CI=true",
-                "NODE_OPTIONS=--max_old_space_size=512",
                 "IMAGE_NAME=ghcr.io/arduinocraft/a428-cicd-labs:latest"
             ]) {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
