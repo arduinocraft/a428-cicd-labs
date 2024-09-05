@@ -1,26 +1,47 @@
 node {
-    docker.image('node:lts-buster-slim').inside('-p 3000:3000') {
-        environment {
-            CI = 'true'
-        }
-        
-        try {
-            stage('Build') {
+    try {
+        stage('Build') {
+            docker.image('node:14').inside {
                 sh 'npm install'
             }
+        }
 
-            stage('Test') {
+        stage('Test') {
+            docker.image('node:14').inside {
                 sh './jenkins/scripts/test.sh'
             }
+        }
 
-            stage('Deliver') {
+        stage('Deliver') {
+            docker.image('node:14').inside {
                 sh './jenkins/scripts/deliver.sh'
                 input message: 'Finished using the website? (Click "Proceed" to continue)'
                 sh './jenkins/scripts/kill.sh'
             }
-        } catch (Exception e) {
-            currentBuild.result = 'FAILURE'
-            throw e
         }
+
+        stage('Deploy') {
+            // Menggunakan Docker builder yang ada pada Jenkins
+            // Dengan Dockerfile node:14 yang ditambahkan dan berada di repo fork
+            // Menggunakan GHCR yang dapat langsung di pull ke prod
+            // Kredensial Github (username dan token PAT) untuk GHCR menggunkan Jenkins variable
+            withEnv([
+                "CI=true",
+                "NODE_OPTIONS=--max_old_space_size=512",
+                "IMAGE_NAME=ghcr.io/arduinocraft/a428-cicd-labs:latest"
+            ]) {
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                    input message: 'Lanjutkan ke tahap Deploy? (Click "Proceed" to continue)'
+                    docker build -t $IMAGE_NAME .
+                    echo $PASSWORD | docker login ghcr.io -u $USERNAME --password-stdin
+                    docker push $IMAGE_NAME
+                    '''
+                }
+            }
+        }
+    } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+        throw e
     }
 }
