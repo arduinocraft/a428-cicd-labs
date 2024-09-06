@@ -32,9 +32,20 @@ node {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     sh '''
                     docker build -t $IMAGE_NAME .
-                    CONTAINER_ID=$(docker run -d -p 3000:3000 $IMAGE_NAME)
-                    # Menjeda pipeline selama 1 menit
-                    sleep 60
+                    '''
+                    
+                    // Menggunakan fitur env variable Jenkins untuk mengingat Container ID agar tidak hilang di script berikutnya
+                    script {
+                        env.CONTAINER_ID = sh(
+                            script: 'docker run -d -p 3000:3000 $IMAGE_NAME',
+                            returnStdout: true
+                        ).trim()
+                    }
+                    
+                    // (Revisi) Menggunakan sleep Jenkins daripada script sh sleep langsung di container
+                    sleep time: 1, unit: 'MINUTES' 
+                    
+                    sh '''
                     docker stop $CONTAINER_ID
                     docker rm $CONTAINER_ID
                     '''
